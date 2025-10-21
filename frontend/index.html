@@ -19,7 +19,11 @@
     <textarea id="jobDescription" rows="6" placeholder="Paste job description here..."></textarea>
 
     <!-- Analyze Button -->
-    <button id="analyzeBtn">Analyze Resume</button>
+    <button type="button" id="analyzeBtn" onclick="analyzeResume(event)">Analyze Resume</button>
+
+    <!-- ✅ JSON Response Display (for testing connection) -->
+    <h3>Backend Response:</h3>
+    <pre id="output"></pre>
 
     <!-- Results Section -->
     <div id="results" style="display:none;">

@@ -1,34 +1,26 @@
-document.getElementById("analyzeBtn").addEventListener("click", function() {
-  const jobDesc = document.getElementById("jobDescription").value;
+async function analyzeResume(event) {
+  if (event) event.preventDefault(); // Prevent page reload if inside a form
+
+  const jobDescription = document.getElementById("jobDescription").value;
   const resumeFile = document.getElementById("resumeUpload").files[0];
 
-  if (!resumeFile || !jobDesc) {
-    alert("Please upload a resume and enter job description!");
+  if (!resumeFile && !jobDescription) {
+    alert("Please upload a resume or paste a job description.");
     return;
   }
 
-  // For now: just show dummy results
-  document.getElementById("results").style.display = "block";
-  document.getElementById("score").innerText = "ATS Score: 72%";
+  const formData = new FormData();
+  if (resumeFile) formData.append("resume", resumeFile);
+  if (jobDescription) formData.append("job_description", jobDescription);
 
-  const ctx = document.getElementById("chart").getContext("2d");
-  new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: ["Matched Keywords", "Missing Keywords"],
-      datasets: [{
-        data: [18, 7],
-        backgroundColor: ["#4CAF50", "#f44336"]
-      }]
-    }
+  const response = await fetch("http://127.0.0.1:5000/analyze", {
+    method: "POST",
+    body: formData
   });
 
-  document.getElementById("feedback").innerHTML = `
-    <h3>AI Feedback:</h3>
-    <ul>
-      <li>✅ Good technical skills listed</li>
-      <li>⚠️ Missing leadership experience</li>
-      <li>⚠️ No mention of teamwork projects</li>
-    </ul>
-  `;
-});
+  const data = await response.json();
+  document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+
+  // Show results section (example)
+  document.getElementById("results").style.display = "block";
+}
