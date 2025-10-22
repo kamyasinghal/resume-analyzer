@@ -55,7 +55,7 @@ analyzeBtn.addEventListener("click", async () => {
     // Animate ATS Score
     const ctx1 = document.getElementById("overallScoreChart").getContext("2d");
     let score = 0;
-    const targetScore = 80; // mock ATS % for now
+    const targetScore = data.ats_score; //real ATS score from backend
     const scoreText = document.getElementById("scoreText");
 
     const chart = new Chart(ctx1, {
