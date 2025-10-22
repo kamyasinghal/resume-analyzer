@@ -3,46 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resume Analyzer</title>
+  <title>Resume Analyzer Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>📄 Resume Analyzer</h1>
 
-    <!-- Wrap in a form -->
-    <form id="resumeForm" enctype="multipart/form-data">
-      <!-- Resume Upload -->
-      <label for="resumeUpload">Upload Resume (PDF/DOCX):</label>
+    <!-- Upload Area -->
+    <div id="uploadArea" class="upload-area">
+      <p>Drag & Drop your resume here or use the button below</p>
       <input type="file" id="resumeUpload" accept=".pdf,.docx">
+      <button id="uploadBtn">Choose File</button>
+      <span id="fileName"></span>
+    </div>
 
-      <!-- Job Description -->
-      <label for="jobDescription">Paste Job Description:</label>
-      <textarea id="jobDescription" rows="6" placeholder="Paste job description here..."></textarea>
+    <!-- Job Description -->
+    <h3>Job Description</h3>
+    <textarea id="jobDescription" rows="5" placeholder="Paste job description here..."></textarea>
 
-      <!-- Analyze Button -->
-      <button type="submit" id="analyzeBtn">Analyze Resume</button>
-    </form>
+    <!-- Analyze Button -->
+    <button id="analyzeBtn">Analyze Resume</button>
 
-    <!-- Backend Response -->
-    <h3>Backend Response:</h3>
-    <pre id="output"></pre>
-
-    <!-- Results Section -->
-    <div id="results" style="display:none;">
-      <h2>Analysis Results</h2>
-      <p id="score"></p>
-      <div>
-        <canvas id="chart" width="400" height="200"></canvas>
+    <!-- Dashboard Section -->
+    <div id="dashboard" style="display:none;">
+      <h2>ATS Score</h2>
+      <div class="ats-container">
+        <canvas id="overallScoreChart" width="150" height="150"></canvas>
+        <div id="scoreText">0%</div>
       </div>
-      <div id="feedback"></div>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Skills Detected</h3>
+          <p id="skills">Python, Flask, HTML/CSS</p>
+        </div>
+        <div class="card">
+          <h3>Experience</h3>
+          <p id="experience">2 years</p>
+        </div>
+        <div class="card">
+          <h3>Education</h3>
+          <p id="education">B.Tech CSE</p>
+        </div>
+      </div>
+
+      <h3>Strengths & Weaknesses</h3>
+      <div class="cards">
+        <div class="card">
+          <h4>Strengths</h4>
+          <ul>
+            <li>Clear structure</li>
+            <li>Technical skills highlighted</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Weaknesses</h4>
+          <ul>
+            <li>Missing ATS keywords</li>
+            <li>Formatting inconsistent</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Skills Breakdown</h3>
+      <canvas id="skillsChart" width="350" height="150"></canvas>
+
+      <h3>Suggestions</h3>
+      <ul id="suggestions">
+        <li>Add more keywords related to job description</li>
+        <li>Highlight leadership experiences</li>
+        <li>Ensure consistent font styles</li>
+      </ul>
+
+      <h3>AI Insights (Coming Soon)</h3>
+      <p>Gemini integration placeholder for content quality, tone, and recommendations.</p>
     </div>
   </div>
 
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

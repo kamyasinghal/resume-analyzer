@@ -1,35 +1,112 @@
-document.getElementById("resumeForm").addEventListener("submit", analyzeResume);
+const uploadArea = document.getElementById("uploadArea");
+const resumeUpload = document.getElementById("resumeUpload");
+const uploadBtn = document.getElementById("uploadBtn");
+const fileNameSpan = document.getElementById("fileName");
+const analyzeBtn = document.getElementById("analyzeBtn");
 
-async function analyzeResume(event) {
-    event.preventDefault(); // MUST prevent default form submission
+// Upload button
+uploadBtn.addEventListener("click", () => resumeUpload.click());
 
-    const resumeFile = document.getElementById("resumeUpload").files[0];
-    const jobDescription = document.getElementById("jobDescription").value;
+// Drag & Drop
+uploadArea.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  uploadArea.style.backgroundColor = "#CFFCF1";
+});
+uploadArea.addEventListener("dragleave", (e) => {
+  e.preventDefault();
+  uploadArea.style.backgroundColor = "#E6FFFA";
+});
+uploadArea.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadArea.style.backgroundColor = "#E6FFFA";
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    resumeUpload.files = files;
+    fileNameSpan.textContent = files[0].name;
+  }
+});
 
-    const formData = new FormData();
-    if (resumeFile) formData.append("resume", resumeFile);
-    if (jobDescription) formData.append("job_description", jobDescription);
+// Show file name
+resumeUpload.addEventListener("change", () => {
+  if (resumeUpload.files.length)
+    fileNameSpan.textContent = resumeUpload.files[0].name;
+});
 
-    const outputDiv = document.getElementById("output");
-    const analyzeBtn = document.getElementById("analyzeBtn");
-    
-    // Loading state
-    analyzeBtn.disabled = true;
-    analyzeBtn.innerText = "Analyzing...";
-    outputDiv.innerText = "Processing...";
+// Analyze Resume
+analyzeBtn.addEventListener("click", async () => {
+  const file = resumeUpload.files[0];
+  const jobDesc = document.getElementById("jobDescription").value;
+  const formData = new FormData();
+  if (file) formData.append("resume", file);
+  if (jobDesc) formData.append("job_description", jobDesc);
 
-    try {
-        const response = await fetch("http://127.0.0.1:5000/analyze", {
-            method: "POST",
-            body: formData
-        });
-        const data = await response.json();
-        outputDiv.innerText = JSON.stringify(data, null, 2);
-    } catch (err) {
-        console.error(err);
-        outputDiv.innerText = `Error: ${err.message}`;
-    } finally {
-        analyzeBtn.disabled = false;
-        analyzeBtn.innerText = "Analyze Resume";
-    }
-}
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerText = "Analyzing...";
+
+  try {
+    const res = await fetch("/analyze", { method: "POST", body: formData });
+    const data = await res.json();
+
+    document.getElementById("skills").innerText = data.skills.join(", ");
+    document.getElementById("experience").innerText = data.experience;
+    document.getElementById("education").innerText = data.education;
+    document.getElementById("dashboard").style.display = "block";
+
+    // Animate ATS Score
+    const ctx1 = document.getElementById("overallScoreChart").getContext("2d");
+    let score = 0;
+    const targetScore = 80; // mock ATS % for now
+    const scoreText = document.getElementById("scoreText");
+
+    const chart = new Chart(ctx1, {
+      type: "doughnut",
+      data: {
+        labels: ["Score", "Remaining"],
+        datasets: [{
+          data: [0, 100],
+          backgroundColor: ["#0D9488", "#F0FDFA"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: "75%",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const interval = setInterval(() => {
+      if (score >= targetScore) clearInterval(interval);
+      else score++;
+      chart.data.datasets[0].data = [score, 100 - score];
+      chart.update();
+      scoreText.innerText = `${score}%`;
+    }, 20);
+
+    // Skills chart
+    const ctx2 = document.getElementById("skillsChart").getContext("2d");
+    new Chart(ctx2, {
+      type: "doughnut",
+      data: {
+        labels: ["Python", "Flask", "HTML/CSS"],
+        datasets: [{
+          data: [5, 3, 2],
+          backgroundColor: ["#0D9488", "#F97316", "#06B6D4"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { position: "bottom" } }
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerText = "Analyze Resume";
+  }
+});

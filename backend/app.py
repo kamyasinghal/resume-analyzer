@@ -14,10 +14,12 @@ ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/')
+# Render homepage
+@app.route('/', methods=['GET'])
 def home():
-    return render_template('index.html')
+    return render_template('index.html')  # <- Flask loads from templates/
 
+# /analyze POST route (keep your existing code)
 @app.route('/analyze', methods=['POST'])
 def analyze_resume():
     file = request.files.get('resume')
@@ -26,19 +28,23 @@ def analyze_resume():
     if not file and not job_description:
         return jsonify({'error': 'No resume or job description provided'}), 400
 
-    if file and not allowed_file(file.filename):
-        return jsonify({'error': 'File type not allowed. Upload PDF or DOCX only.'}), 400
-
-    if file:
+    filename = None
+    if file and allowed_file(file.filename):
         safe_filename = secure_filename(file.filename)
-        file.save(os.path.join(UPLOAD_FOLDER, safe_filename))
+        filename = os.path.join(UPLOAD_FOLDER, safe_filename)
+        file.save(filename)
 
     analysis = {
         'filename': file.filename if file else None,
-        'skills': ['Python', 'Flask', 'HTML/CSS'],
+        'skills': ['Python', 'Flask', 'HTML/CSS', 'JavaScript', 'SQL'],
         'experience': '2 years',
         'education': 'B.Tech CSE',
-        'job_description_received': job_description
+        'job_description_received': job_description if job_description else None,
+        'overall_score': 85,
+        'experience_summary': "Worked as Software Developer at XYZ Corp.",
+        'format_analysis': "Well-structured sections, clear headings.",
+        'keywords': "Contains industry keywords: Python, Flask, SQL",
+        'suggestions': "Add more projects, highlight certifications."
     }
 
     return jsonify(analysis)
