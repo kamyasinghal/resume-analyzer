@@ -1,40 +1,44 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-CORS(app)  # Enables CORS for all routes
+CORS(app)
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Simple GET route to verify backend is running
-@app.route('/', methods=['GET'])
-def home():
-    return "Resume Analyzer Backend is running!"
+ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 
-# POST route for resume analysis
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 @app.route('/analyze', methods=['POST'])
 def analyze_resume():
-    # Check if a file was uploaded
-    file = request.files.get('resume', None)
-    job_description = request.form.get('job_description', None)
+    file = request.files.get('resume')
+    job_description = request.form.get('job_description')
 
     if not file and not job_description:
         return jsonify({'error': 'No resume or job description provided'}), 400
 
-    filename = None
-    if file:
-        filename = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(filename)
+    if file and not allowed_file(file.filename):
+        return jsonify({'error': 'File type not allowed. Upload PDF or DOCX only.'}), 400
 
-    # Dummy analysis (replace with actual parsing logic later)
+    if file:
+        safe_filename = secure_filename(file.filename)
+        file.save(os.path.join(UPLOAD_FOLDER, safe_filename))
+
     analysis = {
         'filename': file.filename if file else None,
         'skills': ['Python', 'Flask', 'HTML/CSS'],
         'experience': '2 years',
         'education': 'B.Tech CSE',
-        'job_description_received': job_description if job_description else None
+        'job_description_received': job_description
     }
 
     return jsonify(analysis)
