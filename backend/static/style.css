@@ -1,5 +1,5 @@
 body {
-  font-family: Arial, sans-serif;
+font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   background-color: #F0FDFA;
   margin: 0;
   padding: 0;
@@ -92,8 +92,8 @@ button:disabled {
 /* ATS Circle */
 .ats-container {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 250px;
+  height: 250px;
   margin: 0 auto 20px;
 }
 
@@ -129,7 +129,7 @@ button:disabled {
 #skillsChart {
   display: block;
   margin: 0 auto 20px auto;
-  max-width: 180px !important;
-  max-height: 180px !important;
+  max-width: 500px !important;
+  max-height: 500px !important;
 }
 
