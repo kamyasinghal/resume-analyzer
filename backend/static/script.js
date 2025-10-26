@@ -185,8 +185,9 @@ analyzeBtn.addEventListener("click", async () => {
     if (data.missing_skills?.length) data.missing_skills.forEach(s => addSuggestion(`Add missing JD skill: ${s}`));
 
     // --- AI Feedback ---
-    const aiText = data.ai_feedback || "AI feedback unavailable at the moment.";
-    aiFeedbackEl.innerText = aiText;
+    /*const aiText = data.ai_feedback || "AI feedback unavailable at the moment.";
+    aiFeedbackEl.innerText = aiText;*/
+    const aiText = data.ai_feedback;
     const sections = parseAIFeedbackToSections(aiText);
     fillStrengthsWeaknesses(sections.strengths, sections.weaknesses);
     if (sections.suggestions?.length) sections.suggestions.forEach(s => addSuggestion(s));
