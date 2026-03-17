@@ -55,18 +55,3 @@ def calculate_smart_ats(resume_text, job_description):
     )
 
     return ats_score, matched_skills, missing_skills
-```
-
----
-
-### `requirements.txt` (repo root)
-```
-Flask==3.1.2
-flask-cors==5.0.0
-Werkzeug==3.1.3
-PyPDF2==3.0.1
-python-docx==1.1.2
-google-generativeai==0.8.3
-python-dotenv==1.0.1
-Jinja2==3.1.6
-gunicorn==23.0.0
