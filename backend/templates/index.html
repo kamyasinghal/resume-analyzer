@@ -3,79 +3,196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resume Analyzer Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>ResumeIQ — AI Resume Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="container">
-    <h1>Resume Analyzer</h1>
 
-    <!-- Upload Area -->
-    <div id="uploadArea" class="upload-area">
-      <p>Drag & Drop your resume here or use the button below</p>
-      <input type="file" id="resumeUpload" accept=".pdf,.docx">
-      <button id="uploadBtn">Choose File</button>
-      <span id="fileName"></span>
+  <div class="noise"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <header>
+    <div class="logo">
+      <span class="logo-mark">R</span>
+      <span class="logo-text">esumeIQ</span>
+    </div>
+    <div class="header-tag">AI-Powered · ATS Scoring · Gemini</div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-label">SMART RESUME SCREENING</div>
+    <h1 class="hero-title">Beat the<br><em>Algorithm.</em></h1>
+    <p class="hero-sub">Upload your resume. Paste the job description. Get your ATS score, skill gaps, and AI-powered feedback in seconds.</p>
+  </section>
+
+  <main class="main-grid">
+    <div class="input-col">
+
+      <div class="step-block">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h2 class="step-title">Upload Resume</h2>
+          <p class="step-hint">PDF or DOCX — we'll extract everything</p>
+          <div id="uploadZone" class="upload-zone">
+            <input type="file" id="resumeUpload" accept=".pdf,.docx">
+            <div class="upload-idle" id="uploadIdle">
+              <div class="upload-icon">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M24 8v24M14 18l10-10 10 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8 36h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="upload-text">
+                <span class="upload-main">Drop your resume here</span>
+                <span class="upload-or">or <button type="button" class="browse-btn" id="browseBtn">browse files</button></span>
+              </div>
+              <div class="upload-formats">PDF · DOCX</div>
+            </div>
+            <div class="upload-selected" id="uploadSelected" style="display:none;">
+              <div class="file-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="file-info">
+                <span class="file-name" id="fileName">resume.pdf</span>
+                <span class="file-size" id="fileSize">0 KB</span>
+              </div>
+              <button type="button" class="file-remove" id="fileRemove" title="Remove">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h2 class="step-title">Job Description</h2>
+          <p class="step-hint">Paste the full JD for accurate matching</p>
+          <div class="textarea-wrap">
+            <textarea id="jobDescription" placeholder="Paste job description here…" rows="7" spellcheck="false"></textarea>
+            <div class="char-count" id="charCount">0 chars</div>
+          </div>
+        </div>
+      </div>
+
+      <button id="analyzeBtn" class="analyze-btn" disabled>
+        <span class="btn-text">Analyze Resume</span>
+        <span class="btn-icon">→</span>
+        <div class="btn-loader" id="btnLoader">
+          <span></span><span></span><span></span>
+        </div>
+      </button>
+
+      <p class="analyze-note" id="analyzeNote">Upload a resume to begin</p>
     </div>
 
-    <!-- Job Description -->
-    <h3>Job Description</h3>
-    <textarea id="jobDescription" rows="5" placeholder="Paste job description here..."></textarea>
-
-    <!-- Analyze Button -->
-    <button id="analyzeBtn">Analyze Resume</button>
-
-    <!-- Dashboard Section -->
-    <div id="dashboard" style="display:none;">
-      <h2>ATS Score</h2>
-      <div class="ats-container">
-        <canvas id="overallScoreChart" width="150" height="150"></canvas>
-        <div id="scoreText">0%</div>
+    <div class="results-col" id="resultsCol">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-graphic">
+          <div class="empty-circle c1"></div>
+          <div class="empty-circle c2"></div>
+          <div class="empty-circle c3"></div>
+          <span class="empty-icon">◎</span>
+        </div>
+        <p class="empty-text">Your analysis will appear here</p>
+        <p class="empty-sub">Fill in the left panel and hit Analyze</p>
       </div>
 
-      <div class="cards">
-        <div class="card">
-          <h3>Skills Detected</h3>
-          <p id="skills">Python, Flask, HTML/CSS</p>
+      <div class="results-inner" id="resultsInner" style="display:none;">
+
+        <div class="score-card" id="scoreCard">
+          <div class="score-label">ATS MATCH SCORE</div>
+          <div class="score-ring-wrap">
+            <canvas id="atsRing" width="180" height="180"></canvas>
+            <div class="score-center">
+              <span class="score-num" id="scoreNum">0</span>
+              <span class="score-pct">%</span>
+            </div>
+          </div>
+          <div class="score-verdict" id="scoreVerdict">—</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="scoreBarFill" style="width:0%"></div>
+          </div>
+          <div class="score-bar-labels">
+            <span>Poor</span><span>Fair</span><span>Good</span><span>Excellent</span>
+          </div>
         </div>
-        <div class="card">
-          <h3>Experience</h3>
-          <p id="experience">2 years</p>
+
+        <div class="stats-row">
+          <div class="stat-pill">
+            <span class="stat-val" id="statMatched">0</span>
+            <span class="stat-key">skills matched</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-val" id="statMissing">0</span>
+            <span class="stat-key">skills missing</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-val" id="statEdu">–</span>
+            <span class="stat-key">education</span>
+          </div>
         </div>
-        <div class="card">
-          <h3>Education</h3>
-          <p id="education">B.Tech CSE</p>
+
+        <div class="tabs">
+          <button class="tab active" data-tab="skills">Skills</button>
+          <button class="tab" data-tab="experience">Experience</button>
+          <button class="tab" data-tab="ai">AI Insights</button>
         </div>
+
+        <div class="tab-panel active" id="tab-skills">
+          <div class="skills-section">
+            <div class="skills-group">
+              <div class="skills-group-label matched-label">✓ Matched</div>
+              <div class="tags" id="matchedTags"></div>
+            </div>
+            <div class="skills-group">
+              <div class="skills-group-label missing-label">✗ Missing</div>
+              <div class="tags" id="missingTags"></div>
+            </div>
+          </div>
+          <div class="chart-section">
+            <div class="chart-title">Skills Breakdown</div>
+            <div class="chart-wrap">
+              <canvas id="skillsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-experience" style="display:none;">
+          <div class="exp-list" id="expList"></div>
+          <div class="edu-block" id="eduBlock"></div>
+        </div>
+
+        <div class="tab-panel" id="tab-ai" style="display:none;">
+          <div class="insights-grid">
+            <div class="insight-card strength-card">
+              <div class="insight-icon">▲</div>
+              <div class="insight-title">Strengths</div>
+              <ul class="insight-list" id="strengthsList"></ul>
+            </div>
+            <div class="insight-card weakness-card">
+              <div class="insight-icon">▼</div>
+              <div class="insight-title">Weaknesses</div>
+              <ul class="insight-list" id="weaknessesList"></ul>
+            </div>
+          </div>
+          <div class="suggestions-block">
+            <div class="suggestions-title">💡 Suggestions</div>
+            <ul class="suggestions-list" id="suggestions"></ul>
+          </div>
+        </div>
+
       </div>
-
-      <h3>Strengths & Weaknesses</h3>
-      <div class="cards">
-        <div class="card">
-          <h4>Strengths</h4>
-          <!-- replaced static list with this container -->
-          <ul id="strengthsList">
-            <!-- JS will insert <li> items here -->
-          </ul>
-        </div>
-        <div class="card">
-          <h4>Weaknesses</h4>
-          <!-- replaced static list with this container -->
-          <ul id="weaknessesList">
-            <!-- JS will insert <li> items here -->
-          </ul>
-        </div>
-      </div>
-
-      <h3>Skills Breakdown</h3>
-      <canvas id="skillsChart" width="350" height="150"></canvas>
-
-      <h3>Suggestions</h3>
-      <ul id="suggestions">
-        <li>Add more keywords related to job description</li>
-      </ul>
     </div>
-  </div>
+  </main>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
