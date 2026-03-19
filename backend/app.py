@@ -9,8 +9,10 @@ from werkzeug.utils import secure_filename
 from utils import extract_skills, calculate_smart_ats
 from PyPDF2 import PdfReader
 import docx
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+except ImportError:
+    import google.generativeai as genai
 from dotenv import load_dotenv
 import re
 
