@@ -9,11 +9,11 @@ from werkzeug.utils import secure_filename
 from utils import extract_skills, calculate_smart_ats
 from PyPDF2 import PdfReader
 import docx
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 import re
 
-# DB import — fail gracefully if DB not configured
 try:
     from db import init_db, save_resume, save_skills, save_match
     DB_ENABLED = True
@@ -29,13 +29,8 @@ ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-else:
-    model = None
+client = genai.Client(api_key=api_key) if api_key else None
 
-# Init DB tables on startup
 if DB_ENABLED:
     try:
         init_db()
@@ -92,7 +87,7 @@ def extract_education(text):
     return lines[:2] if lines else ["Education details not found"]
 
 def get_ai_feedback(resume_text, job_description):
-    if not model:
+    if not client:
         return """
 Strengths:
 - Clear structure
@@ -137,7 +132,10 @@ Job Description:
 {job_description[:1000]}
 """
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         print("Gemini Error:", e)
@@ -192,7 +190,6 @@ def analyze_resume():
         education_summary  = extract_education(resume_text)
         ai_feedback        = get_ai_feedback(resume_text, job_description)
 
-        # ── Save to database ──────────────────────────
         resume_id = None
         if DB_ENABLED:
             try:
@@ -201,16 +198,15 @@ def analyze_resume():
                 save_match(resume_id, ats_score, job_description)
             except Exception as db_err:
                 print("DB save error:", db_err)
-        # ─────────────────────────────────────────────
 
         return jsonify({
-            "skills":        matched_skills,
+            "skills":         matched_skills,
             "missing_skills": missing_skills,
-            "experience":    experience_summary,
-            "education":     education_summary,
-            "ats_score":     ats_score,
-            "ai_feedback":   ai_feedback,
-            "resume_id":     resume_id
+            "experience":     experience_summary,
+            "education":      education_summary,
+            "ats_score":      ats_score,
+            "ai_feedback":    ai_feedback,
+            "resume_id":      resume_id
         })
 
     except Exception as e:
@@ -221,3 +217,17 @@ def analyze_resume():
 
 if __name__ == "__main__":
     app.run(debug=True)
+```
+
+Also update `requirements.txt` — replace `google-generativeai` with the new package:
+```
+Flask==3.1.2
+flask-cors==5.0.0
+Werkzeug==3.1.3
+PyPDF2==3.0.1
+python-docx==1.1.2
+google-genai
+python-dotenv==1.0.1
+Jinja2==3.1.6
+PyMySQL==1.1.1
+cryptography==42.0.8
