@@ -217,7 +217,6 @@ def analyze_resume():
 
 if __name__ == "__main__":
     app.run(debug=True)
-```
 
 Also update `requirements.txt` — replace `google-generativeai` with the new package:
 ```
