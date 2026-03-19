@@ -217,16 +217,3 @@ def analyze_resume():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-Also update `requirements.txt` — replace `google-generativeai` with the new package:
-```
-Flask==3.1.2
-flask-cors==5.0.0
-Werkzeug==3.1.3
-PyPDF2==3.0.1
-python-docx==1.1.2
-google-genai
-python-dotenv==1.0.1
-Jinja2==3.1.6
-PyMySQL==1.1.1
-cryptography==42.0.8
