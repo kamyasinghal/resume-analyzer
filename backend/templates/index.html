@@ -1,198 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ResumeIQ — AI Resume Analyzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-  <div class="noise"></div>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
+  <div class="wrap">
 
-  <header>
-    <div class="logo">
-      <span class="logo-mark">R</span>
-      <span class="logo-text">esumeIQ</span>
-    </div>
-    <div class="header-tag">AI-Powered · ATS Scoring · Gemini</div>
-  </header>
+    <!-- LEFT PANEL -->
+    <div class="left">
 
-  <section class="hero">
-    <div class="hero-label">SMART RESUME SCREENING</div>
-    <h1 class="hero-title">Beat the<br><em>Algorithm.</em></h1>
-    <p class="hero-sub">Upload your resume. Paste the job description. Get your ATS score, skill gaps, and AI-powered feedback in seconds.</p>
-  </section>
+      <div class="brand">
+        <div class="brand-dot"><span>R</span></div>
+        <span class="brand-name">ResumeIQ</span>
+        <span class="brand-pill">AI-powered</span>
+        <div class="toggle-wrap">
+          <span class="toggle-label" id="toggleLabel">Light</span>
+          <div class="toggle" id="themeToggle"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
 
-  <main class="main-grid">
-    <div class="input-col">
-
-      <div class="step-block">
-        <div class="step-num">01</div>
-        <div class="step-content">
-          <h2 class="step-title">Upload Resume</h2>
-          <p class="step-hint">PDF or DOCX — we'll extract everything</p>
-          <div id="uploadZone" class="upload-zone">
-            <input type="file" id="resumeUpload" accept=".pdf,.docx">
-            <div class="upload-idle" id="uploadIdle">
-              <div class="upload-icon">
-                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M24 8v24M14 18l10-10 10 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M8 36h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div class="upload-text">
-                <span class="upload-main">Drop your resume here</span>
-                <span class="upload-or">or <button type="button" class="browse-btn" id="browseBtn">browse files</button></span>
-              </div>
-              <div class="upload-formats">PDF · DOCX</div>
+      <div>
+        <div class="section-label">01 — Upload resume</div>
+        <div class="upload-box" id="uploadZone">
+          <input type="file" id="resumeUpload" accept=".pdf,.docx">
+          <div id="uploadIdle">
+            <div class="upload-icon-wrap">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 2v9M4 6l4-4 4 4M2 13h12"/>
+              </svg>
             </div>
-            <div class="upload-selected" id="uploadSelected" style="display:none;">
-              <div class="file-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <div class="upload-title">Drop your resume here</div>
+            <div class="upload-sub">or <span class="browse-link" id="browseBtn">browse files</span></div>
+            <div class="fmt-row">
+              <span class="fmt-badge">PDF</span>
+              <span class="fmt-badge">DOCX</span>
+            </div>
+          </div>
+          <div id="uploadSelected" style="display:none;">
+            <div class="file-selected-row">
+              <div class="file-icon-wrap">
+                <svg viewBox="0 0 16 16" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/>
+                  <path d="M9 2v4h4"/>
                 </svg>
               </div>
               <div class="file-info">
                 <span class="file-name" id="fileName">resume.pdf</span>
                 <span class="file-size" id="fileSize">0 KB</span>
               </div>
-              <button type="button" class="file-remove" id="fileRemove" title="Remove">✕</button>
+              <button class="file-remove" id="fileRemove">✕</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="step-block">
-        <div class="step-num">02</div>
-        <div class="step-content">
-          <h2 class="step-title">Job Description</h2>
-          <p class="step-hint">Paste the full JD for accurate matching</p>
-          <div class="textarea-wrap">
-            <textarea id="jobDescription" placeholder="Paste job description here…" rows="7" spellcheck="false"></textarea>
-            <div class="char-count" id="charCount">0 chars</div>
-          </div>
+      <div>
+        <div class="section-label">02 — Job description</div>
+        <div class="textarea-wrap">
+          <textarea id="jobDescription" placeholder="Paste job description here…" rows="6" spellcheck="false"></textarea>
+          <span class="char-count" id="charCount">0 chars</span>
         </div>
       </div>
 
-      <button id="analyzeBtn" class="analyze-btn" disabled>
-        <span class="btn-text">Analyze Resume</span>
-        <span class="btn-icon">→</span>
-        <div class="btn-loader" id="btnLoader">
+      <button class="cta" id="analyzeBtn" disabled>
+        <span class="cta-text">Analyze resume</span>
+        <span class="cta-arrow" id="ctaArrow">→</span>
+        <div class="cta-loader" id="ctaLoader">
           <span></span><span></span><span></span>
         </div>
       </button>
 
       <p class="analyze-note" id="analyzeNote">Upload a resume to begin</p>
+
     </div>
 
-    <div class="results-col" id="resultsCol">
+    <!-- RIGHT PANEL -->
+    <div class="right">
+
+      <!-- Empty state -->
       <div class="empty-state" id="emptyState">
-        <div class="empty-graphic">
-          <div class="empty-circle c1"></div>
-          <div class="empty-circle c2"></div>
-          <div class="empty-circle c3"></div>
-          <span class="empty-icon">◎</span>
+        <div class="empty-rings">
+          <div class="er er1"></div>
+          <div class="er er2"></div>
+          <div class="er er3"></div>
         </div>
-        <p class="empty-text">Your analysis will appear here</p>
+        <p class="empty-title">Your results will appear here</p>
         <p class="empty-sub">Fill in the left panel and hit Analyze</p>
       </div>
 
-      <div class="results-inner" id="resultsInner" style="display:none;">
+      <!-- Results -->
+      <div id="resultsInner" style="display:none;">
 
-        <div class="score-card" id="scoreCard">
-          <div class="score-label">ATS MATCH SCORE</div>
-          <div class="score-ring-wrap">
-            <canvas id="atsRing" width="180" height="180"></canvas>
-            <div class="score-center">
-              <span class="score-num" id="scoreNum">0</span>
-              <span class="score-pct">%</span>
+        <div class="score-hero">
+          <div class="score-ring">
+            <svg viewBox="0 0 76 76">
+              <circle class="score-ring-bg" cx="38" cy="38" r="28"/>
+              <circle class="score-ring-fill" id="scoreRingFill" cx="38" cy="38" r="28"/>
+            </svg>
+            <div class="score-ring-label">
+              <span class="score-ring-num" id="scoreNum">0</span>
             </div>
           </div>
-          <div class="score-verdict" id="scoreVerdict">—</div>
-          <div class="score-bar-track">
-            <div class="score-bar-fill" id="scoreBarFill" style="width:0%"></div>
-          </div>
-          <div class="score-bar-labels">
-            <span>Poor</span><span>Fair</span><span>Good</span><span>Excellent</span>
-          </div>
-        </div>
-
-        <div class="stats-row">
-          <div class="stat-pill">
-            <span class="stat-val" id="statMatched">0</span>
-            <span class="stat-key">skills matched</span>
-          </div>
-          <div class="stat-pill">
-            <span class="stat-val" id="statMissing">0</span>
-            <span class="stat-key">skills missing</span>
-          </div>
-          <div class="stat-pill">
-            <span class="stat-val" id="statEdu">–</span>
-            <span class="stat-key">education</span>
+          <div class="score-info">
+            <div class="score-eyebrow">ATS match score</div>
+            <div class="score-verdict" id="scoreVerdict">—</div>
+            <div class="score-bar"><div class="score-bar-fill" id="scoreBarFill"></div></div>
+            <div class="score-bar-labels">
+              <span>Poor</span><span>Fair</span><span>Good</span><span>Excellent</span>
+            </div>
           </div>
         </div>
 
-        <div class="tabs">
-          <button class="tab active" data-tab="skills">Skills</button>
-          <button class="tab" data-tab="experience">Experience</button>
-          <button class="tab" data-tab="ai">AI Insights</button>
+        <div class="stats">
+          <div class="stat stat-matched">
+            <div class="stat-val" id="statMatched">0</div>
+            <div class="stat-key">matched</div>
+          </div>
+          <div class="stat stat-missing">
+            <div class="stat-val" id="statMissing">0</div>
+            <div class="stat-key">missing</div>
+          </div>
+          <div class="stat stat-edu">
+            <div class="stat-val" id="statEdu">—</div>
+            <div class="stat-key">education</div>
+          </div>
         </div>
 
-        <div class="tab-panel active" id="tab-skills">
+        <div class="tabs-row">
+          <button class="tab-btn active" data-tab="skills">Skills</button>
+          <button class="tab-btn" data-tab="experience">Experience</button>
+          <button class="tab-btn" data-tab="ai">AI insights</button>
+        </div>
+
+        <!-- Skills tab -->
+        <div class="tab-panel" id="tab-skills">
           <div class="skills-section">
-            <div class="skills-group">
-              <div class="skills-group-label matched-label">✓ Matched</div>
-              <div class="tags" id="matchedTags"></div>
+            <div>
+              <div class="skill-group-label matched-lbl">✓ Matched</div>
+              <div class="tags-row" id="matchedTags"></div>
             </div>
-            <div class="skills-group">
-              <div class="skills-group-label missing-label">✗ Missing</div>
-              <div class="tags" id="missingTags"></div>
+            <div>
+              <div class="skill-group-label missing-lbl">✗ Missing</div>
+              <div class="tags-row" id="missingTags"></div>
             </div>
           </div>
-          <div class="chart-section">
-            <div class="chart-title">Skills Breakdown</div>
-            <div class="chart-wrap">
-              <canvas id="skillsChart"></canvas>
-            </div>
+          <div class="chart-wrap">
+            <canvas id="skillsChart"></canvas>
           </div>
         </div>
 
+        <!-- Experience tab -->
         <div class="tab-panel" id="tab-experience" style="display:none;">
           <div class="exp-list" id="expList"></div>
           <div class="edu-block" id="eduBlock"></div>
         </div>
 
+        <!-- AI tab -->
         <div class="tab-panel" id="tab-ai" style="display:none;">
-          <div class="insights-grid">
-            <div class="insight-card strength-card">
-              <div class="insight-icon">▲</div>
-              <div class="insight-title">Strengths</div>
+          <div class="insight-grid">
+            <div class="insight-card s">
+              <div class="insight-card-title"><span class="dot-s"></span> Strengths</div>
               <ul class="insight-list" id="strengthsList"></ul>
             </div>
-            <div class="insight-card weakness-card">
-              <div class="insight-icon">▼</div>
-              <div class="insight-title">Weaknesses</div>
+            <div class="insight-card w">
+              <div class="insight-card-title"><span class="dot-w"></span> Weaknesses</div>
               <ul class="insight-list" id="weaknessesList"></ul>
             </div>
           </div>
-          <div class="suggestions-block">
-            <div class="suggestions-title">💡 Suggestions</div>
-            <ul class="suggestions-list" id="suggestions"></ul>
+          <div class="sugg-box">
+            <div class="sugg-title">💡 Suggestions</div>
+            <ul class="sugg-list" id="suggestions"></ul>
           </div>
         </div>
 
       </div>
     </div>
-  </main>
+  </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
