@@ -13,6 +13,14 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import re
 
+# DB import — fail gracefully if DB not configured
+try:
+    from db import init_db, save_resume, save_skills, save_match
+    DB_ENABLED = True
+except Exception as e:
+    print("DB not available:", e)
+    DB_ENABLED = False
+
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
             static_folder=os.path.join(os.path.dirname(__file__), 'static'))
@@ -26,6 +34,14 @@ if api_key:
     model = genai.GenerativeModel("gemini-1.5-flash")
 else:
     model = None
+
+# Init DB tables on startup
+if DB_ENABLED:
+    try:
+        init_db()
+    except Exception as e:
+        print("DB init error:", e)
+        DB_ENABLED = False
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -151,32 +167,52 @@ def analyze_resume():
     try:
         resume_text = ""
         job_description = request.form.get("job_description", "")
+        original_filename = "resume"
+        file_type = "unknown"
+
         if 'resume' in request.files:
             file = request.files['resume']
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
+                original_filename = secure_filename(file.filename)
+                file_type = original_filename.rsplit('.', 1)[1].lower()
                 tmp_dir = tempfile.gettempdir()
-                file_path = os.path.join(tmp_dir, filename)
+                file_path = os.path.join(tmp_dir, original_filename)
                 file.save(file_path)
                 resume_text = extract_text_from_file(file_path)
                 try:
                     os.remove(file_path)
                 except Exception:
                     pass
+
         if not resume_text:
             return jsonify({"error": "No text found in resume."}), 400
+
         ats_score, matched_skills, missing_skills = calculate_smart_ats(resume_text, job_description)
         experience_summary = extract_experience(resume_text)
-        education_summary = extract_education(resume_text)
-        ai_feedback = get_ai_feedback(resume_text, job_description)
+        education_summary  = extract_education(resume_text)
+        ai_feedback        = get_ai_feedback(resume_text, job_description)
+
+        # ── Save to database ──────────────────────────
+        resume_id = None
+        if DB_ENABLED:
+            try:
+                resume_id = save_resume(original_filename, file_type, resume_text)
+                save_skills(resume_id, matched_skills, missing_skills)
+                save_match(resume_id, ats_score, job_description)
+            except Exception as db_err:
+                print("DB save error:", db_err)
+        # ─────────────────────────────────────────────
+
         return jsonify({
-            "skills": matched_skills,
+            "skills":        matched_skills,
             "missing_skills": missing_skills,
-            "experience": experience_summary,
-            "education": education_summary,
-            "ats_score": ats_score,
-            "ai_feedback": ai_feedback
+            "experience":    experience_summary,
+            "education":     education_summary,
+            "ats_score":     ats_score,
+            "ai_feedback":   ai_feedback,
+            "resume_id":     resume_id
         })
+
     except Exception as e:
         print("Error in /analyze:", e)
         import traceback
@@ -185,3 +221,45 @@ def analyze_resume():
 
 if __name__ == "__main__":
     app.run(debug=True)
+```
+
+---
+
+### 3. Update `requirements.txt` (repo root)
+```
+Flask==3.1.2
+flask-cors==5.0.0
+Werkzeug==3.1.3
+PyPDF2==3.0.1
+python-docx==1.1.2
+google-generativeai
+python-dotenv==1.0.1
+Jinja2==3.1.6
+PyMySQL==1.1.1
+cryptography==42.0.8
+```
+
+---
+
+### 4. Add `MYSQL_URL` to Vercel environment variables
+
+Once you have your Railway MySQL URL, go to **Vercel → Project → Settings → Environment Variables** and add:
+```
+MYSQL_URL = mysql://user:password@host.railway.internal:3306/railway
+```
+
+---
+
+### How the data flows
+```
+User uploads resume
+       ↓
+Resume table  ← filename, file_type, raw_text
+       ↓
+Skill table   ← upsert each skill name
+       ↓
+Resume_Skill  ← links resume ↔ skill, marks matched=true/false
+       ↓
+Job table     ← stores the pasted job description
+       ↓
+Matches table ← resume_id, job_id, match_score, timestamp
