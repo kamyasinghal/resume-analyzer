@@ -31,7 +31,17 @@ ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+try:
+    client = genai.Client(api_key=api_key) if api_key else None
+    USE_NEW_GENAI = True
+except Exception:
+    import google.generativeai as old_genai
+    if api_key:
+        old_genai.configure(api_key=api_key)
+        client = old_genai.GenerativeModel("gemini-1.5-flash")
+    else:
+        client = None
+    USE_NEW_GENAI = False
 
 if DB_ENABLED:
     try:
@@ -134,11 +144,15 @@ Job Description:
 {job_description[:1000]}
 """
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
+        if USE_NEW_GENAI:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt
+            )
+        else:
+            response = client.generate_content(prompt)
         return response.text
+
     except Exception as e:
         print("Gemini Error:", e)
         return """
