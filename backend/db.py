@@ -8,7 +8,6 @@ load_dotenv()
 def get_connection():
     url = os.getenv("MYSQL_URL")
     if url:
-        # Parse mysql://user:pass@host:port/dbname
         from urllib.parse import urlparse
         p = urlparse(url)
         return pymysql.connect(
@@ -20,7 +19,6 @@ def get_connection():
             cursorclass=DictCursor,
             autocommit=True
         )
-    # Fallback to individual env vars
     return pymysql.connect(
         host=os.getenv("MYSQL_HOST", "localhost"),
         port=int(os.getenv("MYSQL_PORT", 3306)),
@@ -31,79 +29,111 @@ def get_connection():
         autocommit=True
     )
 
+
 def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
+    # USER — matches ER diagram exactly
     cur.execute("""
         CREATE TABLE IF NOT EXISTS User (
-            id          INT AUTO_INCREMENT PRIMARY KEY,
-            email       VARCHAR(255) UNIQUE,
+            user_id     INT AUTO_INCREMENT PRIMARY KEY,
             name        VARCHAR(255),
+            role        VARCHAR(50),
+            email       VARCHAR(255) UNIQUE,
+            phone       VARCHAR(20),
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
+    # COMPANY — matches ER diagram exactly
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Company (
-            id          INT AUTO_INCREMENT PRIMARY KEY,
+            company_id  INT AUTO_INCREMENT PRIMARY KEY,
             name        VARCHAR(255) NOT NULL,
+            location    VARCHAR(255),
             industry    VARCHAR(255),
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
+    # JOB — matches ER diagram exactly
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Job (
-            id           INT AUTO_INCREMENT PRIMARY KEY,
-            company_id   INT,
-            title        VARCHAR(255),
-            description  TEXT,
-            created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (company_id) REFERENCES Company(id)
+            job_id               INT AUTO_INCREMENT PRIMARY KEY,
+            company_id           INT,
+            job_title            VARCHAR(255),
+            required_experience  VARCHAR(100),
+            job_description      TEXT,
+            posted_date          DATE,
+            created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (company_id) REFERENCES Company(company_id)
         )
     """)
 
+    # RESUME — matches ER diagram exactly
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Resume (
-            id           INT AUTO_INCREMENT PRIMARY KEY,
-            user_id      INT,
-            filename     VARCHAR(255),
-            file_type    VARCHAR(10),
-            raw_text     LONGTEXT,
-            uploaded_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES User(id)
+            resume_id   INT AUTO_INCREMENT PRIMARY KEY,
+            user_id     INT,
+            title       VARCHAR(255),
+            experience  VARCHAR(100),
+            summary     TEXT,
+            education   VARCHAR(255),
+            filename    VARCHAR(255),
+            file_type   VARCHAR(10),
+            raw_text    LONGTEXT,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES User(user_id)
         )
     """)
 
+    # SKILL — matches ER diagram exactly
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Skill (
-            id    INT AUTO_INCREMENT PRIMARY KEY,
-            name  VARCHAR(100) UNIQUE NOT NULL
+            skill_id    INT AUTO_INCREMENT PRIMARY KEY,
+            skill_name  VARCHAR(100) UNIQUE NOT NULL,
+            category    VARCHAR(100)
         )
     """)
 
+    # RESUME_SKILL (Has_Skill M:N) — matches ER diagram exactly
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Resume_Skill (
-            id         INT AUTO_INCREMENT PRIMARY KEY,
-            resume_id  INT NOT NULL,
-            skill_id   INT NOT NULL,
-            matched    BOOLEAN DEFAULT FALSE,
-            FOREIGN KEY (resume_id) REFERENCES Resume(id),
-            FOREIGN KEY (skill_id)  REFERENCES Skill(id),
+            id          INT AUTO_INCREMENT PRIMARY KEY,
+            resume_id   INT NOT NULL,
+            skill_id    INT NOT NULL,
+            proficiency VARCHAR(50),
+            matched     BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY (resume_id) REFERENCES Resume(resume_id),
+            FOREIGN KEY (skill_id)  REFERENCES Skill(skill_id),
             UNIQUE KEY uq_resume_skill (resume_id, skill_id)
         )
     """)
 
+    # APPLICATION (Applies_To M:N) — matches ER diagram exactly
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS Application (
+            application_id  INT AUTO_INCREMENT PRIMARY KEY,
+            resume_id       INT NOT NULL,
+            job_id          INT NOT NULL,
+            status          VARCHAR(20) DEFAULT 'APPLIED',
+            applied_date    DATE,
+            FOREIGN KEY (resume_id) REFERENCES Resume(resume_id),
+            FOREIGN KEY (job_id)    REFERENCES Job(job_id)
+        )
+    """)
+
+    # MATCHES — for ATS score storage
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Matches (
-            id           INT AUTO_INCREMENT PRIMARY KEY,
-            resume_id    INT NOT NULL,
-            job_id       INT,
-            match_score  FLOAT NOT NULL,
-            matched_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (resume_id) REFERENCES Resume(id),
-            FOREIGN KEY (job_id)    REFERENCES Job(id)
+            id          INT AUTO_INCREMENT PRIMARY KEY,
+            resume_id   INT NOT NULL,
+            job_id      INT,
+            match_score FLOAT NOT NULL,
+            matched_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (resume_id) REFERENCES Resume(resume_id),
+            FOREIGN KEY (job_id)    REFERENCES Job(job_id)
         )
     """)
 
@@ -113,7 +143,6 @@ def init_db():
 
 
 def save_resume(filename, file_type, raw_text):
-    """Insert a resume row and return its new ID."""
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -127,21 +156,18 @@ def save_resume(filename, file_type, raw_text):
 
 
 def save_skills(resume_id, matched_skills, missing_skills):
-    """Upsert skills and link them to the resume."""
     conn = get_connection()
     cur = conn.cursor()
 
     all_skills = [(s, True) for s in matched_skills] + [(s, False) for s in missing_skills]
 
     for skill_name, is_matched in all_skills:
-        # Upsert skill
         cur.execute(
-            "INSERT INTO Skill (name) VALUES (%s) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+            "INSERT INTO Skill (skill_name) VALUES (%s) ON DUPLICATE KEY UPDATE skill_id=LAST_INSERT_ID(skill_id)",
             (skill_name,)
         )
         skill_id = cur.lastrowid
 
-        # Link to resume
         cur.execute("""
             INSERT INTO Resume_Skill (resume_id, skill_id, matched)
             VALUES (%s, %s, %s)
@@ -153,15 +179,13 @@ def save_skills(resume_id, matched_skills, missing_skills):
 
 
 def save_match(resume_id, match_score, job_description=None):
-    """Store the ATS match score, optionally linking a job."""
     conn = get_connection()
     cur = conn.cursor()
 
     job_id = None
     if job_description and job_description.strip():
-        # Save as anonymous job if no real job exists
         cur.execute(
-            "INSERT INTO Job (title, description) VALUES (%s, %s)",
+            "INSERT INTO Job (job_title, job_description) VALUES (%s, %s)",
             ("Uploaded JD", job_description[:2000])
         )
         job_id = cur.lastrowid
